@@ -198,25 +198,42 @@ def disparar_foguete():
 # Função para capturar e processar as entradas do jogador
 def mover_lancador(event):
     global lancador_pos, direcao_lancador
-    if jogo_ativo:
-        if event.keysym == 'Left' and lancador_pos > 20:
-            lancador_pos -= 20
-        elif event.keysym == 'Right' and lancador_pos < 780:
-            lancador_pos += 20
-        elif event.keysym == 'Up':
-            direcao_lancador = 'vertical'
-        elif event.keysym == 'Down':
-            direcao_lancador = 'vertical'
-        elif event.keysym == 'a':
-            direcao_lancador = 'esquerda'
-        elif event.keysym == 'd':
-            direcao_lancador = 'direita'
-        elif event.keysym == 'q':
+    if not jogo_ativo:
+        return
+
+    if event.keysym == 'Left':
+        if direcao_lancador == 'vertical':
             direcao_lancador = 'diagonal_esquerda'
-        elif event.keysym == 'e':
+        elif direcao_lancador == 'diagonal_esquerda':
+            direcao_lancador = 'esquerda'
+        elif direcao_lancador == 'direita':
             direcao_lancador = 'diagonal_direita'
-        verificar_recarga()
-        criar_interface()
+        elif direcao_lancador == 'diagonal_direita':
+            direcao_lancador = 'vertical'
+        elif direcao_lancador == 'esquerda':
+            if lancador_pos > 20:
+                lancador_pos -= 20
+
+    elif event.keysym == 'Right':
+        if direcao_lancador == 'vertical':
+            direcao_lancador = 'diagonal_direita'
+        elif direcao_lancador == 'diagonal_direita':
+            direcao_lancador = 'direita'
+        elif direcao_lancador == 'esquerda':
+            direcao_lancador = 'diagonal_esquerda'
+        elif direcao_lancador == 'diagonal_esquerda':
+            direcao_lancador = 'vertical'
+        elif direcao_lancador == 'direita':
+            if lancador_pos < 780:
+                lancador_pos += 20
+
+    elif event.keysym == 'Up':
+        direcao_lancador = 'vertical'
+
+    verificar_recarga()
+    criar_interface()
+
+
 
 def disparar(event):
     if event.keysym == 'space':
@@ -227,10 +244,7 @@ root.bind('<Left>', mover_lancador)
 root.bind('<Right>', mover_lancador)
 root.bind('<Up>', mover_lancador)
 root.bind('<Down>', mover_lancador)
-root.bind('<a>', mover_lancador)
-root.bind('<d>', mover_lancador)
-root.bind('<q>', mover_lancador)
-root.bind('<e>', mover_lancador)
+
 root.bind('<space>', disparar)
 
 # Função para mover foguetes em uma thread
