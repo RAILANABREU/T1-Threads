@@ -1,52 +1,8 @@
 import tkinter as tk
+from tkinter import messagebox
 from threading import Thread, Lock
 import random
 import time
-
-lancador_0_cima = [
-    "   ||   ",
-    "___++___",
-]
-
-lancador_135_cima = [
-    "   \\    ",
-    "___++___",
-]
-
-lancador_45_cima = [
-    "   / /   ",
-    "___++___",
-]
-
-lancador_90_direita = [
-    "   >>   ",
-    "___++___",
-
-]
-
-lancador_90_esquerda = [
-    "   <<   ",
-    "___++___",
-
-]
-
-nave = [
-"     __/)     (\__     ",
-"  ,-'~~(   _   )~~`-.  ",
-" /      \/'_`\/      \ ",
-"|       /_(_)_\       |",
-"|     _(/(\_/)\)_     |",
-"|    / // \ / \\ \    |",
- "\  | ``  / \ ''  |  / ",
- " \  )   /   \   (  /  ",
- "  )/   /     \   \(   ",
- "  '    `-`-'-'    `   ",
-
-]
-
-foguetes = ["*"]
-
-
 
 # Parâmetros de dificuldade
 dificuldade = {
@@ -66,6 +22,8 @@ foguetes_disponiveis = n_foguetes
 foguetes_disparados = []
 naves = []
 mutex = Lock()
+pontos = 0
+jogo_ativo = True
 
 # Inicialização da interface do jogo
 root = tk.Tk()
@@ -81,73 +39,55 @@ label_foguetes.pack()
 lancador_pos = 400
 direcao_lancador = 'vertical'
 
+# Desenho da área de recarga
+recarregar_x = 50
+recarregar_y = 570
+recarregar_width = 60
+recarregar_height = 30
+
 def atualizar_mostrador_foguetes():
     label_foguetes.config(text=f"Foguetes Disponíveis: {foguetes_disponiveis}")
 
-# Função para criar a interface do jogo
-def criar_interface():
-    global canvas, lancador_pos, direcao_lancador
-    canvas.delete("all")
-    # Canhão representado como um retângulo
-    canhao_repres = {
-        'vertical': "||",
-        'esquerda': "<<",
-        'direita': ">>",
-        'diagonal_esquerda': "\\",
-        'diagonal_direita': "//"
-    }
-    # Desenhar o lançador
-    canvas.create_rectangle(lancador_pos - 10, 580, lancador_pos + 10, 600, fill='white')
-    # Desenhar a ponta do lançador
-    canvas.create_text(lancador_pos, 570, text=canhao_repres[direcao_lancador], font=('Courier', 12), fill='white')
-    root.update()
+# Desenhos dos objetos
+lancador_0_cima = [
+    "   ||   ",
+    "___++___",
+]
 
-def agendar_atualizacao():
-    global foguetes_disparados, naves
-    canvas.delete("all")
-    # Desenhar o lançador
-    canhao_repres = {
-        'vertical': "||",
-        'esquerda': "<<",
-        'direita': ">>",
-        'diagonal_esquerda': "\\",
-        'diagonal_direita': "//"
-    }
-    canvas.create_rectangle(lancador_pos - 10, 580, lancador_pos + 10, 600, fill='white')
-    canvas.create_text(lancador_pos, 570, text=canhao_repres[direcao_lancador], font=('Courier', 12), fill='white')
-    # Desenhar os foguetes disparados
-    for foguete in foguetes_disparados:
-        foguete.desenhar(canvas)
-    # Desenhar as naves
-    for nave in naves:
-        nave.desenhar(canvas)
-    root.update()
+lancador_135_cima = [
+    "   \\    ",
+    "___++___",
+]
 
-def atualizar_interface():
-    root.after(50, agendar_atualizacao)
+lancador_45_cima = [
+    "   / /   ",
+    "___++___",
+]
 
-# Classe para representar as naves
-class Nave:
-    def __init__(self, x):
-        self.x = x
-        self.y = 0
-        self.viva = True
+lancador_90_direita = [
+    "   >>   ",
+    "___++___",
+]
 
-    def mover(self):
-        self.y += velocidade_naves
+lancador_90_esquerda = [
+    "   <<   ",
+    "___++___",
+]
 
-    def desenhar(self, canvas):
-        if self.viva:
-            canvas.create_rectangle(self.x - 10, self.y - 10, self.x + 10, self.y + 10, fill='blue')
+nave = [
+    "     __/)     (\\__     ",
+    "  ,-'~~(   _   )~~`-.  ",
+    " /      \\'_`\\/      \\ ",
+    "|       /_(_)_\\       |",
+    "|     _(/(\\_/\\)_     |",
+    "|    / // \\ / \\\\ \\    |",
+    " \\  | ``  / \\ ''  |  / ",
+    "  \\  )   /   \\   (  /  ",
+    "   )/   /     \\   \\(   ",
+    "   '    `-`-'-'    `   ",
+]
 
-# Função para gerar naves de forma aleatória
-def gerar_naves_aleatoriamente():
-    global naves
-    while len(naves) < qtd_naves:
-        time.sleep(random.randint(1, 5))  # Intervalo aleatório entre 1 e 5 segundos
-        with mutex:
-            x = random.randint(20, 780)
-            naves.append(Nave(x))
+foguete = ["*"]
 
 # Classe para representar os foguetes
 class Foguete:
@@ -156,7 +96,6 @@ class Foguete:
         self.y = y
         self.direcao = direcao
         self.ativo = True
-        self.representacao = self.escolher_representacao(direcao)
 
     def mover(self):
         if self.direcao == 'vertical':
@@ -174,27 +113,83 @@ class Foguete:
         if self.y < 0 or self.x < 0 or self.x > 800:
             self.ativo = False
 
-    def escolher_representacao(self, direcao):
-        if direcao == 'vertical':
-            return "     | |\n__+ +__"
-        elif direcao == 'diagonal_esquerda':
-            return "     \\ \n__+ +__"
-        elif direcao == 'diagonal_direita':
-            return "     / /\n__+ +__"
-        elif direcao == 'esquerda':
-            return "    <<\n__+ +__"
-        elif direcao == 'direita':
-            return "    >>\n__+ +__"
-
     def desenhar(self, canvas):
         if self.ativo:
-            canvas.create_text(self.x, self.y, text=self.representacao, font=('Courier', 10), fill='red')
+            canvas.create_text(self.x, self.y, text=foguete[0], font=('Courier', 52), fill='red')
+
+
+class Nave:
+    def __init__(self, x):
+        self.x = x
+        self.y = 0
+        self.viva = True
+
+    def mover(self):
+        self.y += velocidade_naves
+
+    def desenhar(self, canvas):
+        if self.viva:
+            for i, line in enumerate(nave):
+                canvas.create_text(self.x, self.y + i * 8, text=line, font=('Courier', 8), fill='blue')
+
+def criar_interface():
+    global canvas, lancador_pos, direcao_lancador
+    canvas.delete("all")
+    # Desenhar área de recarga
+    canvas.create_rectangle(recarregar_x, recarregar_y, recarregar_x + recarregar_width, recarregar_y + recarregar_height, fill='green')
+    canvas.create_text(recarregar_x + recarregar_width/2, recarregar_y + recarregar_height/2, text='RECARREGAR', font=('Courier', 8), fill='white')
+    # Canhão representado como um retângulo
+    if direcao_lancador == 'vertical':
+        representacao = lancador_0_cima
+    elif direcao_lancador == 'diagonal_esquerda':
+        representacao = lancador_135_cima
+    elif direcao_lancador == 'diagonal_direita':
+        representacao = lancador_45_cima
+    elif direcao_lancador == 'esquerda':
+        representacao = lancador_90_esquerda
+    elif direcao_lancador == 'direita':
+        representacao = lancador_90_direita
+
+    for i, line in enumerate(representacao):
+        canvas.create_text(lancador_pos, 580 + i * 10, text=line, font=('Courier', 12), fill='white')
+    root.update()
+
+def verificar_recarga():
+    global foguetes_disponiveis
+    if (lancador_pos >= recarregar_x and lancador_pos <= recarregar_x + recarregar_width):
+        foguetes_disponiveis = n_foguetes
+        atualizar_mostrador_foguetes()
+
+def agendar_atualizacao():
+    global foguetes_disparados, naves
+    if jogo_ativo:
+        canvas.delete("all")
+        criar_interface()
+        # Desenhar os foguetes disparados
+        for foguete in foguetes_disparados:
+            foguete.desenhar(canvas)
+        # Desenhar as naves
+        for nave in naves:
+            nave.desenhar(canvas)
+        root.update()
+
+def atualizar_interface():
+    root.after(50, agendar_atualizacao)
+
+# Função para gerar naves de forma aleatória
+def gerar_naves_aleatoriamente():
+    global naves
+    while jogo_ativo and len(naves) < qtd_naves:
+        time.sleep(random.randint(1, 5))  # Intervalo aleatório entre 1 e 5 segundos
+        with mutex:
+            x = random.randint(20, 780)
+            naves.append(Nave(x))
 
 # Função para disparar foguetes
 def disparar_foguete():
     global foguetes_disponiveis, foguetes_disparados, lancador_pos, direcao_lancador, mutex
     with mutex:
-        if foguetes_disponiveis > 0:
+        if foguetes_disponiveis > 0 and jogo_ativo:
             foguetes_disponiveis -= 1
             foguete = Foguete(lancador_pos, 580, direcao_lancador)
             foguetes_disparados.append(foguete)
@@ -203,36 +198,45 @@ def disparar_foguete():
 # Função para capturar e processar as entradas do jogador
 def mover_lancador(event):
     global lancador_pos, direcao_lancador
-    if event.keysym == 'Left' and lancador_pos > 20:
-        lancador_pos -= 20
-    elif event.keysym == 'Right' and lancador_pos < 780:
-        lancador_pos += 20
-    elif event.keysym == 'Up':
-        direcao_lancador = 'vertical'
-    elif event.keysym == 'Down':
-        direcao_lancador = 'vertical'
-    elif event.keysym == 'a':
-        direcao_lancador = 'esquerda'
-    elif event.keysym == 'd':
-        direcao_lancador = 'direita'
-    elif event.keysym == 'q':
-        direcao_lancador = 'diagonal_esquerda'
-    elif event.keysym == 'e':
-        direcao_lancador = 'diagonal_direita'
-    criar_interface()
+    if jogo_ativo:
+        if event.keysym == 'Left' and lancador_pos > 20:
+            lancador_pos -= 20
+        elif event.keysym == 'Right' and lancador_pos < 780:
+            lancador_pos += 20
+        elif event.keysym == 'Up':
+            direcao_lancador = 'vertical'
+        elif event.keysym == 'Down':
+            direcao_lancador = 'vertical'
+        elif event.keysym == 'a':
+            direcao_lancador = 'esquerda'
+        elif event.keysym == 'd':
+            direcao_lancador = 'direita'
+        elif event.keysym == 'q':
+            direcao_lancador = 'diagonal_esquerda'
+        elif event.keysym == 'e':
+            direcao_lancador = 'diagonal_direita'
+        verificar_recarga()
+        criar_interface()
 
 def disparar(event):
     if event.keysym == 'space':
         disparar_foguete()
 
 # Bind das teclas
-root.bind('<Key>', mover_lancador)
+root.bind('<Left>', mover_lancador)
+root.bind('<Right>', mover_lancador)
+root.bind('<Up>', mover_lancador)
+root.bind('<Down>', mover_lancador)
+root.bind('<a>', mover_lancador)
+root.bind('<d>', mover_lancador)
+root.bind('<q>', mover_lancador)
+root.bind('<e>', mover_lancador)
 root.bind('<space>', disparar)
 
 # Função para mover foguetes em uma thread
 def mover_foguetes():
     global foguetes_disparados
-    while True:
+    while jogo_ativo:
         with mutex:
             for foguete in foguetes_disparados:
                 foguete.mover()
@@ -243,42 +247,54 @@ def mover_foguetes():
 
 # Função para mover naves em uma thread
 def mover_naves():
-    global naves
-    while True:
+    global naves, pontos, jogo_ativo
+    while jogo_ativo:
         with mutex:
             for nave in naves:
                 nave.mover()
                 if nave.y > 600:
                     naves.remove(nave)
+                    pontos -= 1
         atualizar_interface()
         time.sleep(0.1)
 
 # Função para verificar colisões entre foguetes e naves
 def verificar_colisoes():
-    global foguetes_disparados, naves
-    while True:
+    global foguetes_disparados, naves, pontos, jogo_ativo
+    while jogo_ativo:
         with mutex:
             for foguete in foguetes_disparados:
                 for nave in naves:
-                    if (nave.x - 10 < foguete.x < nave.x + 10) and (nave.y - 10 < foguete.y < nave.y + 10) and nave.viva:
+                    if nave.viva and (nave.x - 50 < foguete.x < nave.x + 50) and (nave.y - 50 < foguete.y < nave.y + 50):
                         nave.viva = False
                         foguete.ativo = False
                         naves.remove(nave)
                         foguetes_disparados.remove(foguete)
+                        pontos += 1
+                        break
         time.sleep(0.05)
+
+# Função para mostrar mensagem de vitória ou derrota
+def mostrar_mensagem(resultado):
+    if resultado == 'vitoria':
+        messagebox.showinfo("Fim de Jogo", "Você ganhou!")
+    else:
+        messagebox.showinfo("Fim de Jogo", "Você perdeu!")
 
 # Função para verificar condições de vitória ou derrota
 def verificar_condicoes():
-    while True:
+    global jogo_ativo
+    while jogo_ativo:
         with mutex:
             naves_vivas = [nave for nave in naves if nave.viva]
-            if len(naves_vivas) <= qtd_naves / 2:
-                print("Vitória do jogador!")
-                break
-            elif len(naves) > qtd_naves / 2:
-                print("Derrota do jogador!")
-                break
+            if pontos >= qtd_naves // 2:
+                jogo_ativo = False
+                root.after(0, mostrar_mensagem, 'vitoria')
+            elif len(naves_vivas) > qtd_naves // 2:
+                jogo_ativo = False
+                root.after(0, mostrar_mensagem, 'derrota')
         time.sleep(1)
+    root.quit()
 
 # Função principal que executa o loop do jogo
 def loop_principal():
@@ -300,4 +316,3 @@ def iniciar_jogo():
 if __name__ == "__main__":
     iniciar_jogo()
     root.mainloop()
- 
