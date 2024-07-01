@@ -6,13 +6,13 @@ import time
 
 # Parâmetros de dificuldade
 dificuldade = {
-    'facil': {'n_foguetes': 20, 'velocidade_naves': 5, 'qtd_naves': 10},
-    'medio': {'n_foguetes': 15, 'velocidade_naves': 3, 'qtd_naves': 15},
-    'dificil': {'n_foguetes': 10, 'velocidade_naves': 1, 'qtd_naves': 20}
+    'facil': {'n_foguetes': 20, 'velocidade_naves': 3, 'qtd_naves': 10},
+    'medio': {'n_foguetes': 15, 'velocidade_naves': 5, 'qtd_naves': 15},
+    'dificil': {'n_foguetes': 10, 'velocidade_naves': 7, 'qtd_naves': 20}
 }
 
 # Configuração inicial
-config = dificuldade['medio']
+config = dificuldade['dificil']
 n_foguetes = config['n_foguetes']
 velocidade_naves = config['velocidade_naves']
 qtd_naves = config['qtd_naves']
